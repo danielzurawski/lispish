@@ -23,3 +23,7 @@
 
 (deftest fn-form-with-let
   (is (= "var x;x=function(x) {return (x*x)};" (lisp-to-js (let [x (fn [x] (* x x))])))))
+
+(deftest recursion
+  (is (= "function fib(n) {if(n<2) {return 1;} else { return (fib(n-1)+fib(n-2)); }}"
+         (lisp-to-js (defn fib [n] (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))))))

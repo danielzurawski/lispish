@@ -6,12 +6,7 @@
         [clojure.tools.trace]])
 
 (def op (set ['+ '- '* '/ '> '< '=]))
-(def forms (set ['let 'if 'fn 'recur]))
-
-;;
-;; dogdogdog
-;; godgodgod
-;;
+(def forms (set ['let 'if 'fn 'defn]))
 
 ;; Clojure is a single pass compiler, thus we have to use forward declaration
 ;; if we need to use a function before it's declared
@@ -27,7 +22,8 @@
       (list? expressions) (do (println "emit: list") (emit-list expressions))
       (integer? expressions) (do (println "emit: integer") (str expressions))
       (float? expressions) (do (println "emit: float") (str expressions))
-      (string? expressions) (do (println "emit: string") (str expressions)) )))
+      (string? expressions) (do (println "emit: string") (str expressions))
+      :else (str expressions))))
 
 ;; Abstract Structural Binding - + falls in type, + in op and 2 2 in tail
 (defn emit-op [type [op & tail]]
@@ -58,15 +54,11 @@
        (emit rest)
        "}"))
 
-(defn emit-recur [head expression]
-  (println "emit recur, head: " head ", expression: " expression))
-
 (defn emit-forms [head expression]
   (do (println "emit-forms, head: " head ", expression: " expression)
       (cond (= head 'let) (emit-let head expression)
             (= head 'if) (emit-if head expression)
-            (= head 'fn) (emit-fn head expression)
-            (= head 'recur) (emit-recur head expression))
+            (= head 'fn) (emit-fn head expression))
       )
   )
 
@@ -88,9 +80,6 @@
             :else "cos nowego w liscie"))
         ;; Not safe, may run into stack overflow if this will be a list or not-recognized
         (emit (first expressions)))))
-
-(defn detect-recur [forms]
-  (map #(if (= % 'recur) (print true) false) forms))
 
 ;; Macro not to evaluate the forms directly
 (defmacro lisp-to-js [forms]
