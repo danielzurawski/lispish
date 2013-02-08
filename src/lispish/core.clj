@@ -6,7 +6,12 @@
         [clojure.tools.trace]])
 
 (def op (set ['+ '- '* '/ '> '< '=]))
-(def name (set ['let 'if 'fn]))
+(def forms (set ['let 'if 'fn 'recur]))
+
+;;
+;; dogdogdog
+;; godgodgod
+;;
 
 ;; Clojure is a single pass compiler, thus we have to use forward declaration
 ;; if we need to use a function before it's declared
@@ -53,16 +58,20 @@
        (emit rest)
        "}"))
 
-(defn emit-name [head expression]
-  (do (println "emit-name, head: " head ", expression: " expression)
+(defn emit-recur [head expression]
+  (println "emit recur, head: " head ", expression: " expression))
+
+(defn emit-forms [head expression]
+  (do (println "emit-forms, head: " head ", expression: " expression)
       (cond (= head 'let) (emit-let head expression)
             (= head 'if) (emit-if head expression)
-            (= head 'fn) (emit-fn head expression))
+            (= head 'fn) (emit-fn head expression)
+            (= head 'recur) (emit-recur head expression))
       )
   )
 
 (comment
-  (defn emit-name [type [bracket-or-x? [x y]]]
+  (defn emit-forms [type [bracket-or-x? [x y]]]
   (println "printing type: " (type type))
   (cond (= type 'let) (emit-let x y)
         (= type 'if) ())))
@@ -80,16 +89,50 @@
                    ", symbol first:" (symbol (first expressions)))
           (cond
             (contains? op head) (emit-op head expressions)
-            (contains? name head) (emit-name head expressions)
+            (contains? forms head) (emit-forms head expressions)
 
             :else "cos nowego w liscie"))
         ;; Not safe, may run into stack overflow if this will be a list or not-recognized
-        (emit (first expressions))
-        )
-      )
-  )
+        (emit (first expressions)))))
 
+(defn detect-recur [forms]
+  (map #(if (= % 'recur) (print true) false) forms))
+
+;; Macro not to evaluate the forms directly
 (defmacro lisp-to-js [forms]
   "Convert a Lispy expression to its equivalent JavaScript expression.
    Returns JavaScript code."
-  (emit forms))
+  (emit forms)
+;;  (detect-recur forms)
+  )
+
+;; TODO: TDD-quality test coverage!!
+
+;; Simple arighmetic expression
+;; (lisp-to-js (+ 2 2))
+;; (lisp-to-js (- 2 2))
+
+;; All of the forms ( including (let ) ) form (at the moment it only takes 1 argument and does not have implicit DO form)
+;; (lisp-to-js (let [x 20]))
+
+;; If form
+;; (lisp-to-js (if (> x 10) 1 0))
+
+;; Fn form with let
+;; (lisp-to-js (let [x (fn [x] (* x x))]))
+
+;; If with fn and let
+;; (lisp-to-js (let [x (fn [x] (if (> x 5) 1 0))]))
+
+;; Inner anonymous functions with scope issues (var declared inside of the if test)
+;; (lisp-to-js (if (= x "test") (let [b (fn [x] (* x x))]) (let [c (fn [x] (/ x x))])))
+
+;; Let doesn't have an implicit do form
+;; (lisp-to-js (let [x 10] (- 15 x)))
+;; An alternative is to define a function assigned to variable that takes an X as an arugment
+;; !! (lisp-to-js (let [x (fn [x] (- 15 x))])) !!
+
+;; TODO:
+;; 1. Let with arithmetic - fails as there are multiple arguments to let
+;; 2. Recur function
+;; 3. Annonymous inner functions are locally scoped within for e.g. if statements
