@@ -70,12 +70,6 @@
       )
   )
 
-(comment
-  (defn emit-forms [type [bracket-or-x? [x y]]]
-  (println "printing type: " (type type))
-  (cond (= type 'let) (emit-let x y)
-        (= type 'if) ())))
-
 (defn emit-list [expressions]
   (do (println "emit-list expressions: " expressions)
       (if (symbol? (first expressions))
