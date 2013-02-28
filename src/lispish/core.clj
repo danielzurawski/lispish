@@ -42,9 +42,9 @@
 (defn emit-if [type [if condition true-form & false-form]]
   (str "if"
        (emit condition)
-       " {"
+       " { return "
        (emit true-form)
-       "} else {"
+       "} else { return "
        (emit false-form)
        "}"))
 
@@ -54,13 +54,22 @@
        (emit rest)
        "}"))
 
+(defn emit-defn [type [defn name [arg] & rest]]
+  (str (str "function " name "(" arg ") {"
+       (emit rest)
+       "}")))
+
+(defn emit-recur [head [name args]]
+  (println "emit-recur, head:" head ", name: " name ", args: " args)
+  (str name "(" (emit args) ")"))
+
 (defn emit-forms [head expression]
   (do (println "emit-forms, head: " head ", expression: " expression)
       (cond (= head 'let) (emit-let head expression)
             (= head 'if) (emit-if head expression)
-            (= head 'fn) (emit-fn head expression))
-      )
-  )
+            (= head 'fn) (emit-fn head expression)
+            (= head 'defn) (emit-defn head expression)
+            :else (emit-recur head expression) )))
 
 (defn emit-list [expressions]
   (do (println "emit-list expressions: " expressions)
@@ -77,7 +86,9 @@
             (contains? op head) (emit-op head expressions)
             (contains? forms head) (emit-forms head expressions)
 
-            :else "cos nowego w liscie"))
+            :else (emit-forms head expressions)
+            ;;:else (emit-forms head expressions)
+            ))
         ;; Not safe, may run into stack overflow if this will be a list or not-recognized
         (emit (first expressions)))))
 
@@ -85,11 +96,7 @@
 (defmacro lisp-to-js [forms]
   "Convert a Lispy expression to its equivalent JavaScript expression.
    Returns JavaScript code."
-  (emit forms)
-;;  (detect-recur forms)
-  )
-
-;; TODO: TDD-quality test coverage!!
+  (emit forms))
 
 ;; Simple arighmetic expression
 ;; (lisp-to-js (+ 2 2))
