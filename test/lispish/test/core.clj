@@ -13,18 +13,30 @@
 
 (deftest divide
   (is (= "(2/2)" (lisp-to-js (/ 2 2)))))
-;; Lisp (/ 2 2) = 1; JavaScript (2/2) = 1
 
 (deftest if-form
-  (is (= "if(5>10) {true} else {false}" (lisp-to-js (if (> 5 10) "true" "false")))))
+  (is (= "if(5>10) { return true } else { return false }" (lisp-to-js (if (> 5 10) "true" "false")))))
 
 (deftest fn-form
   (is (= "function(x) {return (x*x)}" (lisp-to-js (fn [x] (* x x))))))
 
-(deftest fn-form-with-let
-  (is (= "var x;x=function(x) {return (x*x)};" (lisp-to-js (let [x (fn [x] (* x x))])))))
+(deftest let-form
+  (is (= "var x;x=5;" (lisp-to-js (let [x 5])))))
 
-(deftest defn
-  (is (= "function fib(n) {return (n*n);}" (lisp-to-js (defn fib [n] (* n n)) ))))
+(deftest let-lambda-function
+  (is (= "var x;x=function(x) {return (x*5)};" (lisp-to-js (let [x (fn [x] (* x 5))])))))
 
-;;(deftest recursion (is (= "function fib(n) {if(n<2) {return 1;} else { return (fib(n-1)+fib(n-2)); }}" (lisp-to-js (defn fib [n] (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2)))))))))
+(deftest defn-form
+  (is (= "function square(x) {(x*x)}" (lisp-to-js (defn square [x] (* x x))))))
+
+(deftest fibonacci-example
+  (is (= "function fib(n) {if(n<2) { return 1 } else { return (fib((n-1))+fib((n-2))) }}"
+         (lisp-to-js (defn fib [n] (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))) ))))
+
+(deftest factorial-example
+  (is (= "function factorial(n) {if(n<2) { return 1 } else { return (n*factorial((n-1))) }}"
+         (lisp-to-js (defn factorial [n] (if (< n 2) 1 (* n (factorial (- n 1)))))))))
+
+(deftest ackermann-function
+  (is (= "function ackermann(m, n) {if(m==0) { return (n+1) } else { return ackermann((m-1),if(n==0) { return 1 } else { return ackermann(m, n-1)}) }}"
+         (lisp-to-js (defn ackermann [m n] (if (= m 0) (+ n 1) (ackermann (- m 1) (if (= n 0) 1 (ackermann m (- n 1))))) )))))

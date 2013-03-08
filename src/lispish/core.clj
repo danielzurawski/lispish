@@ -6,7 +6,7 @@
         [clojure.tools.trace]])
 
 (def op (set ['+ '- '* '/ '> '< '=]))
-(def forms (set ['let 'if 'fn 'defn]))
+(def forms (set ['let 'if 'fn 'defn 'cond]))
 
 ;; Clojure is a single pass compiler, thus we have to use forward declaration
 ;; if we need to use a function before it's declared
@@ -15,14 +15,21 @@
 (defn emit [expressions]
   "Take an s-expression and emit its corresponding JavaScript form"
   (do
-    (println "type of expression: " (type expressions))
+    ;;(println "type of expression: " (type expressions))
     (cond
       (nil? expressions) "null"
-      (symbol? expressions) (do (println "emit: symbol")  (str expressions))
-      (list? expressions) (do (println "emit: list") (emit-list expressions))
-      (integer? expressions) (do (println "emit: integer") (str expressions))
-      (float? expressions) (do (println "emit: float") (str expressions))
-      (string? expressions) (do (println "emit: string") (str expressions))
+      (symbol? expressions) (do ;;(println "emit: symbol")
+                                (str expressions))
+      (list? expressions) (do ;;(println "emit: list")
+                            (emit-list expressions)
+                            )
+      (integer? expressions) (do ;;(println "emit: integer")
+                                 (str expressions))
+      (float? expressions) (do ;;(println "emit: float")
+                               (str expressions))
+      (string? expressions) (do ;;(println "emit: string")
+                              (str expressions)
+                              )
       :else (str expressions))))
 
 ;; Abstract Structural Binding - + falls in type, + in op and 2 2 in tail
@@ -31,7 +38,7 @@
   (do (println "emit-op, type: " type ", op: " (str " " op " ") ", tail: " tail ", tail first type: " (type (first tail)))
       ;; Interlace the arguments with the operator
       (str "(" (clojure.string/join
-                (str op)
+                (str (if (= op '=) "==" op))
                 (map emit tail))
            ")")))
 
@@ -44,9 +51,9 @@
        (emit condition)
        " { return "
        (emit true-form)
-       "} else { return "
+       " } else { return "
        (emit false-form)
-       "}"))
+       " }"))
 
 (defn emit-fn [type [fn [arg] & rest]]
   (str "function(" arg ") {"
@@ -54,14 +61,24 @@
        (emit rest)
        "}"))
 
-(defn emit-defn [type [defn name [arg] & rest]]
-  (str (str "function " name "(" arg ") {"
+(defn emit-defn [type [defn name [arg & more] & rest]]
+  (str (str "function " name "("
+            (if (nil? more) arg (str arg ", " (clojure.string/join ", " more))) ") {"
        (emit rest)
        "}")))
 
-(defn emit-recur [head [name args]]
-  (println "emit-recur, head:" head ", name: " name ", args: " args)
-  (str name "(" (emit args) ")"))
+(defn emit-recur [head [name args & rest]]
+  (println "emit-recur, head:" head ", name: " name ", args: " args ", more: " rest)
+  (str name "("
+       (if (nil? rest)
+         (str "(" (emit args) ")")
+         (str (str (emit args)) ", " (clojure.string/join ", " (map emit rest)))) ")"))
+
+(defn emit-cond [head [name condition statement & rest]]
+  (if (nil? rest)
+    (str "if(" (emit condition) ") { return " (emit statement) " }"  )
+    (reduce str (interleave (map #(str "else if(" % ")") (apply list (map emit (take-nth 2 rest))))
+                           (map #(str "{ return " % " }") (take-nth 2 (pop rest)))))))
 
 (defn emit-forms [head expression]
   (do (println "emit-forms, head: " head ", expression: " expression)
@@ -69,6 +86,7 @@
             (= head 'if) (emit-if head expression)
             (= head 'fn) (emit-fn head expression)
             (= head 'defn) (emit-defn head expression)
+            (= head 'cond) (emit-cond head expression)
             :else (emit-recur head expression) )))
 
 (defn emit-list [expressions]
@@ -85,10 +103,8 @@
           (cond
             (contains? op head) (emit-op head expressions)
             (contains? forms head) (emit-forms head expressions)
+            :else (emit-forms head expressions)))
 
-            :else (emit-forms head expressions)
-            ;;:else (emit-forms head expressions)
-            ))
         ;; Not safe, may run into stack overflow if this will be a list or not-recognized
         (emit (first expressions)))))
 
