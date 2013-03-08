@@ -117,32 +117,3 @@
   "Convert a Lispy expression to its equivalent JavaScript expression.
    Returns JavaScript code."
   (emit forms))
-
-;; Simple arighmetic expression
-;; (lisp-to-js (+ 2 2))
-;; (lisp-to-js (- 2 2))
-
-;; All of the forms ( including (let ) ) form (at the moment it only takes 1 argument and does not have implicit DO form)
-;; (lisp-to-js (let [x 20]))
-
-;; If form
-;; (lisp-to-js (if (> x 10) 1 0))
-
-;; Fn form with let
-;; (lisp-to-js (let [x (fn [x] (* x x))]))
-
-;; If with fn and let
-;; (lisp-to-js (let [x (fn [x] (if (> x 5) 1 0))]))
-
-;; Inner anonymous functions with scope issues (var declared inside of the if test)
-;; (lisp-to-js (if (= x "test") (let [b (fn [x] (* x x))]) (let [c (fn [x] (/ x x))])))
-
-;; Let doesn't have an implicit do form
-;; (lisp-to-js (let [x 10] (- 15 x)))
-;; An alternative is to define a function assigned to variable that takes an X as an arugment
-;; !! (lisp-to-js (let [x (fn [x] (- 15 x))])) !!
-
-;; TODO:
-;; 1. Let with arithmetic - fails as there are multiple arguments to let
-;; 2. Recur function
-;; 3. Annonymous inner functions are locally scoped within for e.g. if statements
