@@ -30,13 +30,16 @@
   (is (= "function square(x) {(x*x)}" (lisp-to-js (defn square [x] (* x x))))))
 
 (deftest fibonacci-example
-  (is (= "function fib(n) {if(n<2) { return 1 } else { return (fib((n-1))+fib((n-2))) }}"
+  (is (= "function fib(n) {if(n<2) { return 1 } else { return (fib(((n-1)))+fib(((n-2)))) }}"
          (lisp-to-js (defn fib [n] (if (< n 2) 1 (+ (fib (- n 1)) (fib (- n 2))))) ))))
 
 (deftest factorial-example
-  (is (= "function factorial(n) {if(n<2) { return 1 } else { return (n*factorial((n-1))) }}"
+  (is (= "function factorial(n) {if(n<2) { return 1 } else { return (n*factorial(((n-1)))) }}"
          (lisp-to-js (defn factorial [n] (if (< n 2) 1 (* n (factorial (- n 1)))))))))
 
 (deftest ackermann-function
-  (is (= "function ackermann(m, n) {if(m==0) { return (n+1) } else { return ackermann((m-1),if(n==0) { return 1 } else { return ackermann(m, n-1)}) }}"
-         (lisp-to-js (defn ackermann [m n] (if (= m 0) (+ n 1) (ackermann (- m 1) (if (= n 0) 1 (ackermann m (- n 1))))) )))))
+  (is (= "function ackermann(m, n) {if((m==0)) { return (n+1) }else if((n==0)){ return ackermann((m-1), 1) }else if(true){ return ackermann((m-1), ackermann(m, (n-1))) }}"
+         (lisp-to-js (defn ackermann [m n]
+                       (cond (= m 0) (+ n 1)
+                             (= n 0) (ackermann (- m 1) 1)
+                             :else (ackermann (- m 1) (ackermann m (- n 1)))))))))

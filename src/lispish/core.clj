@@ -75,10 +75,13 @@
          (str (str (emit args)) ", " (clojure.string/join ", " (map emit rest)))) ")"))
 
 (defn emit-cond [head [name condition statement & rest]]
-  (if (nil? rest)
-    (str "if(" (emit condition) ") { return " (emit statement) " }"  )
-    (reduce str (interleave (map #(str "else if(" % ")") (apply list (map emit (take-nth 2 rest))))
-                           (map #(str "{ return " % " }") (take-nth 2 (pop rest)))))))
+  (str "if(" (emit condition) ") { return " (emit statement) " }"
+       (reduce str (interleave (map #(str "else if(" % ")")
+                                    ;; Special case if condition is :else then emit "true"
+                                    (reduce list (map #(if (= (str %) ":else") "true" (emit %))
+                                                     (take-nth 2 rest))))
+                               (map #(str "{ return " % " }")
+                                    (map emit (take-nth 2 (pop rest)))))) ))
 
 (defn emit-forms [head expression]
   (do (println "emit-forms, head: " head ", expression: " expression)
@@ -103,8 +106,9 @@
           (cond
             (contains? op head) (emit-op head expressions)
             (contains? forms head) (emit-forms head expressions)
-            :else (emit-forms head expressions)))
 
+            :else (emit-forms head expressions)
+            ))
         ;; Not safe, may run into stack overflow if this will be a list or not-recognized
         (emit (first expressions)))))
 
