@@ -1,9 +1,13 @@
 (ns #^{:author "Daniel Zurawski"
        :doc "A simple Lisp to JavaScript transcompiler written in Clojure."}
   lispish.core
-  [:require [clojure.string :as str]]
-  [:use [clojure.walk]
-        [clojure.tools.trace]])
+  [:require
+   [clojure.string :as str]]
+  [:use
+   [clojure.walk]
+   [clojure.tools.trace]]
+  (:gen-class :main true))
+
 
 (def op (set ['+ '- '* '/ '> '< '=]))
 (def forms (set ['let 'if 'fn 'defn 'cond]))
@@ -15,7 +19,7 @@
 (defn emit [expressions]
   "Take an s-expression and emit its corresponding JavaScript form"
   (do
-    ;;(println "type of expression: " (type expressions))
+    (println "Emit Lispish: " expressions)
     (cond
       (nil? expressions) "null"
       (symbol? expressions) (do ;;(println "emit: symbol")
@@ -35,7 +39,7 @@
 ;; Abstract Structural Binding - + falls in type, + in op and 2 2 in tail
 (defn emit-op [type [op & tail]]
   "Emit s-expression with single operators and two arguments"
-  (do (println "emit-op, type: " type ", op: " (str " " op " ") ", tail: " tail ", tail first type: " (type (first tail)))
+  (do (println "Emit-op, head: " op ", tail: " tail)
       ;; Interlace the arguments with the operator
       (str "(" (clojure.string/join
                 (str (if (= op '=) "==" op))
@@ -62,6 +66,8 @@
        "}"))
 
 (defn emit-defn [type [defn name [arg & more] & rest]]
+  (do
+    (println "Emit-defn, name: " name ", arg: " arg ", arg tail: " more ", rest: " rest))
   (str (str "function " name "("
             (if (nil? more) arg (str arg ", " (clojure.string/join ", " more))) ") {"
        (emit rest)
@@ -84,7 +90,7 @@
                                     (map emit (take-nth 2 (pop rest)))))) ))
 
 (defn emit-forms [head expression]
-  (do (println "emit-forms, head: " head ", expression: " expression)
+  (do (println "Emit-forms, head: " head ", full expression: " expression)
       (cond (= head 'let) (emit-let head expression)
             (= head 'if) (emit-if head expression)
             (= head 'fn) (emit-fn head expression)
@@ -93,16 +99,15 @@
             :else (emit-recur head expression) )))
 
 (defn emit-list [expressions]
-  (do (println "emit-list expressions: " expressions)
+  (do
       (if (symbol? (first expressions))
 
         (let [head (symbol (first expressions))
               expressions (conj
                            (rest expressions) head)]
 
-          (println "emit list head: " head
-                   ", expression: rest " (rest expressions) ", conj: "
-                   ", symbol first:" (symbol (first expressions)))
+          (println "Emit-list head: " head
+                   ", tail: " (rest expressions))
           (cond
             (contains? op head) (emit-op head expressions)
             (contains? forms head) (emit-forms head expressions)
@@ -113,7 +118,13 @@
         (emit (first expressions)))))
 
 ;; Macro not to evaluate the forms directly
-(defmacro lisp-to-js [forms]
-  "Convert a Lispy expression to its equivalent JavaScript expression.
-   Returns JavaScript code."
-  (emit forms))
+(defn lisp-to-js [forms]
+  (emit (read-string forms)))
+
+(defn -main
+  "The application's main function"
+  [& args]
+  (if args
+    (do
+      (println (lisp-to-js (first args))))
+    (println "You need to provide a valid Lispish source code as an input.")))
