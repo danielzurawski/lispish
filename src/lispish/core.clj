@@ -5,7 +5,8 @@
    [clojure.string :as str]]
   [:use
    [clojure.walk]
-   [clojure.tools.trace]]
+   [clojure.tools.trace]
+   [clojure.tools.cli :only (cli)]]
   (:gen-class :main true))
 
 
@@ -121,10 +122,27 @@
 (defn lisp-to-js [forms]
   (emit (read-string forms)))
 
-(defn -main
-  "The application's main function"
-  [& args]
-  (if args
-    (do
-      (println (lisp-to-js (first args))))
-    (println "You need to provide a valid Lispish source code as an input.")))
+(defn run
+  "Print out the options and the arguments"
+  [opts args]
+    (cond (:input opts)
+      (let [result (lisp-to-js (slurp (:input opts)))]
+        (if (:output opts)
+          (spit (:output opts) result)
+          (println result)))
+      (seq args) (println (lisp-to-js (first args)))
+      :else (println "No path to input source code specified and no code given as argument.")))
+
+(defn -main [& args]
+  (let [[opts args banner]
+        (cli args
+             ["-h" "--help" "Show help" :flag true :default false]
+             ["-in" "--input" "REQUIRED: Path to Lispish source code."]
+             ["-out" "--output" "REQUIRED: Path to JavaScript output file."]
+             )]
+    (when (:help opts)
+      (println banner)
+      (System/exit 0))
+    (if (or (:input opts) (seq args))
+      (run opts args)
+      (println banner))))
