@@ -1,1 +1,1 @@
-(2+2)
+function is-prime(num) {return ((2<num)?false:((2==num)?true:((0==(num%2))?false:prime-over-two(num, 3))))}
