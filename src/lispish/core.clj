@@ -131,6 +131,21 @@
     (println code)
     (emit code)))
 
+(defn read-file-emit [st file-out]
+    (let [form (read st false "")]
+      (if (not (= form ""))
+        (do
+          (spit file-out (str (emit form) "\n")  :append true)
+          (read-file-emit st file-out)))))
+
+(defn read-file [file-in file-out]
+  (with-open [r (java.io.PushbackReader.
+                 (clojure.java.io/reader file-in))]
+    (binding [*read-eval* false]
+      (spit file-out "" :append false)
+      (read-file-emit r file-out))))
+
+
 (defn run
   "Print out the options and the arguments"
   [opts args]
