@@ -60,6 +60,7 @@
         (str "(function(" (emit x) ") { return "  (emit body)  " })(" (emit y) ")" ))
 
 (defn emit-if [type [if condition true-form & false-form]]
+  (println "Emit-if, condition: " condition ", true-form: " true-form ", false-form: " false-form)
   (str "("
        (emit condition)
        " ? ("
@@ -80,22 +81,21 @@
   (emit-defn head (concat (take 1 expression) '("~") (drop 1 expression))))
 
 (defn emit-call [head [name args & rest]]
+  (println "Emit-call, name: " name ", args: " args ", rest: " rest)
   (str name "("
        (if (nil? rest)
          (str "(" (emit args) ")")
          (str (str (emit args)) ", " (clojure.string/join ", " (map emit rest)))) ")"))
 
 (defn emit-recur [head expression]
-  (println "head: " head ", exp: " expression)
+  (println "Emit recur, head: " head ", expression: " expression)
   (emit-call head (concat '("arguments.callee") (drop 1 expression))))
 
 (defn emit-cond [head [name & rest]]
   (let [rev (reverse (partition 2 rest))]
-    (println "przed rev: " rev)
-    (println "rev: " (drop 1 rev))
-    ;;(println ", rrev: " (type (rest (vec rev)) ))
+    (println "Emit-cond, head: " head ", name: " name ", rest: " rest ", reverse after partitioning: " rev)
     (reduce
-          (fn [a b] (str "(" (emit (first b)) "?" (emit (second b)) ":" a ")"))
+          (fn [a b] (do (println "a: " a ", b: " b ) (str "(" (emit (first b)) "?" (emit (second b)) ":" a ")")) )
           (str (emit (second (first rev))))
           (drop 1 rev))))
 
