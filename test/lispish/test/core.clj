@@ -14,6 +14,15 @@
 (deftest divide
   (is (= "(2/2)" (lisp-to-js "(/ 2 2)"))))
 
+(deftest logical-or
+  (is (= "((5>10)||(10>5))" (lisp-to-js "(or (> 5 10) (> 10 5))"))))
+
+(deftest logical-and
+  (is (= "((5>10)&&(10>5))" (lisp-to-js "(and (> 5 10) (> 10 5))"))))
+
+(deftest logical-and
+  (is (= "(!(5>10))" (lisp-to-js "(not (> 5 10))"))))
+
 (deftest if-form
   (is (= "((5>10) ? (true):(false))" (lisp-to-js "(if (> 5 10)\"true\" \"false\")"))))
 

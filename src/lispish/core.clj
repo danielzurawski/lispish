@@ -11,6 +11,7 @@
 
 
 (def op (set ['mod '+ '- '* '/ '> '< '=]))
+(def bop (set ['or 'and 'not]))
 (def forms (set ['recur 'let 'if 'fn 'defn 'cond]))
 
 ;; Clojure is a single pass compiler, thus we have to use forward declaration
@@ -43,12 +44,16 @@
   "Emit s-expression with single operators and two arguments"
   (do (println "Emit-op, head: " op ", tail: " tail)
       ;; Interlace the arguments with the operator
-      (str "(" (clojure.string/join
+      (if (= op 'not)
+        (str "(!" (emit tail) ")")
+        (str "(" (clojure.string/join
                 (str (cond (= op '=) "=="
                            (= op 'mod) "%"
+                           (= op 'or) "||"
+                           (= op 'and) "&&"
                            :else op))
                 (map emit tail))
-           ")")))
+           ")"))))
 
 (defn emit-let [type [let [x y] body]]
   (println "type: " type ", let: " let ", x: " x ", y: " y ", body: " body)
@@ -65,7 +70,6 @@
 
 (defn emit-defn [type [defn name [arg & more] & rest]]
   (do
-    (println "type of rest " (type (str rest)))
     (println "Emit-defn, name: " ", arg: " arg ", arg tail: " more ", rest: " rest))
   (str (str "function " (if (= "~" name) "" name) "("
             (if (nil? more) arg (str arg ", " (clojure.string/join ", " more))) ") {return "
@@ -75,13 +79,11 @@
 (defn emit-fn [head expression]
   (emit-defn head (concat (take 1 expression) '("~") (drop 1 expression))))
 
-
 (defn emit-call [head [name args & rest]]
   (str name "("
        (if (nil? rest)
          (str "(" (emit args) ")")
          (str (str (emit args)) ", " (clojure.string/join ", " (map emit rest)))) ")"))
-
 
 (defn emit-recur [head expression]
   (println "head: " head ", exp: " expression)
@@ -118,7 +120,7 @@
           (println "Emit-list head: " head
                    ", tail: " (rest expressions))
           (cond
-            (contains? op head) (emit-op head expressions)
+            (or (contains? op head) (contains? bop head)) (emit-op head expressions)
             (contains? forms head) (emit-forms head expressions)
 
             :else (emit-forms head expressions)
@@ -144,7 +146,6 @@
     (binding [*read-eval* false]
       (spit file-out "" :append false)
       (read-file-emit r file-out))))
-
 
 (defn run
   "Print out the options and the arguments"
