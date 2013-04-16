@@ -18,13 +18,13 @@
   (is (= "((5>10) ? (true):(false))" (lisp-to-js "(if (> 5 10)\"true\" \"false\")"))))
 
 (deftest fn-form
-  (is (= "function(x) {return (x*x)}" (lisp-to-js "(fn [x] (* x x))"))))
+  (is (= "function (x) {return (x*x)}" (lisp-to-js "(fn [x] (* x x))"))))
 
 (deftest let-form
-  (is (= "var x;x=5;" (lisp-to-js "(let [x 5])"))))
+  (is (= "(function(x) { return (x*x) })(2)" (lisp-to-js "(let [x 2] (* x x))"))))
 
 (deftest let-lambda-function
-  (is (= "var x;x=function(x) {return (x*5)};" (lisp-to-js "(let [x (fn [x] (* x 5))])"))))
+  (is (= "(function(times-five) { return times-five((5)) })(function (x) {return (x*5)})" (lisp-to-js "(let [times-five (fn [x] (* x 5))] (times-five 5))"))))
 
 (deftest defn-form
   (is (= "function square(x) {return (x*x)}" (lisp-to-js "(defn square [x] (* x x))"))))
@@ -44,6 +44,18 @@
                              (= n 0) (ackermann (- m 1) 1)
                              :else (ackermann (- m 1) (ackermann m (- n 1)))))"))))
 
-;; Test na let z wartoscia
-
-;; Test z is_prime z temp.cl
+(deftest primality-checking-program
+  (is (= "function is_prime(num) {return (function(prime_over_two) { return ((num<2)?false:((2==num)?true:((0==(num%2))?false:prime_over_two(num, 3)))) })(function (num, factor) {return ((factor>Math.sqrt((num))) ? (true):(((0==(num%factor)) ? (false):(arguments.callee(num, (2+factor))))))})}"
+         (lisp-to-js "(defn is_prime [num]
+        (let [prime_over_two
+                (fn [num factor]
+                        (if (> factor (Math.sqrt num))
+                                true
+                                (if (= 0 (mod num factor))
+                                        false
+                                        (recur num (+ 2 factor)))))]
+        (cond
+                (< num 2) false
+                (= 2 num) true
+                (= 0 (mod num 2)) false
+                :else (prime_over_two num 3))))"))))

@@ -52,7 +52,7 @@
 
 (defn emit-let [type [let [x y] body]]
   (println "type: " type ", let: " let ", x: " x ", y: " y ", body: " body)
-        (str " (function(" (emit x) ") { return "  (emit body)  " })(" (emit y) ")" ))
+        (str "(function(" (emit x) ") { return "  (emit body)  " })(" (emit y) ")" ))
 
 (defn emit-if [type [if condition true-form & false-form]]
   (str "("
