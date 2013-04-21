@@ -21,22 +21,14 @@
 (defn emit [expressions]
   "Take an s-expression and emit its corresponding JavaScript form"
   (do
-    (println "Emit Lispish: " expressions)
-    (println "Emit TYPE: " (type expressions))
+    (println "Top level - Emit Lispish: " expressions)
     (cond
       (nil? expressions) "null"
-      (symbol? expressions) (do ;;(println "emit: symbol")
-                                (str expressions))
-      (seq? expressions) (do ;;(println "emit: list")
-                            (emit-list expressions)
-                            )
-      (integer? expressions) (do ;;(println "emit: integer")
-                                 (str expressions))
-      (float? expressions) (do ;;(println "emit: float")
-                               (str expressions))
-      (string? expressions) (do ;;(println "emit: string")
-                              (str expressions)
-                              )
+      (symbol? expressions) (str expressions)
+      (seq? expressions) (emit-list expressions)
+      (integer? expressions) (str expressions)
+      (float? expressions) (str expressions)
+      (string? expressions) (str \" expressions \")
       :else (str expressions))))
 
 ;; Abstract Structural Binding - + falls in type, + in op and 2 2 in tail
@@ -56,7 +48,7 @@
            ")"))))
 
 (defn emit-let [type [let [x y] body]]
-  (println "type: " type ", let: " let ", x: " x ", y: " y ", body: " body)
+  (println "Emit-let, x: " x ", y: " y ", body: " body)
         (str "(function(" (emit x) ") { return "  (emit body)  " })(" (emit y) ")" ))
 
 (defn emit-if [type [if condition true-form & false-form]]
@@ -150,13 +142,12 @@
 (defn run
   "Print out the options and the arguments"
   [opts args]
-    (cond (:input opts)
-      (let [result (lisp-to-js (slurp (:input opts)))]
-        (if (:output opts)
-          (spit (:output opts) result)
-          (println result)))
-      (seq args) (println (lisp-to-js (first args)))
-      :else (println "No path to input source code specified and no code given as argument.")))
+  (cond
+    (:input opts) (if (:output opts)
+                    (read-file (:input opts) (:output opts))
+                    (println "Please provide --output or -out, path where the output JavaScript file will be generated."))
+    (seq args) (println (lisp-to-js (first args)))
+    :else (println "No path to input source code specified and no code given as argument.")))
 
 (defn -main [& args]
   (let [[opts args banner]

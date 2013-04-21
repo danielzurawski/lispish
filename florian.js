@@ -1,0 +1,1 @@
+function is_prime(num) {return (function(prime_over_two) { return ((num<2)?false:((2==num)?true:((0==(num%2))?false:prime_over_two(num, 3)))) })(function (num, factor) {return ((factor>Math.sqrt((num))) ? (true):(((0==(num%factor)) ? (false):(arguments.callee(num, (2+factor))))))})}
